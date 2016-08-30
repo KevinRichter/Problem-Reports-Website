@@ -1,0 +1,138 @@
+<html>
+
+<head>
+<title>Save Report</title>
+</head>
+
+<body>
+<h1>Testing Submit</h1>
+
+	<?php 
+		session_start();
+		$dbhost = "athena.ecs.csus.edu";
+		$dbuser = "recursion";
+		$dbpass = "recursion_db";
+		$dbname = "recursion";
+		$con = mysql_connect("$dbhost","$dbuser","$dbpass") or die(mysql_error());	
+		mysql_select_db("$dbname") or die("no database by that name");
+		
+		echo "<br /><h2>You are successfully connected to your database.</h2><br /><br />
+			Otherwise you would see an include warning, or a mysql connection error.<br /><br />
+			Happy coding!
+			";
+					
+		// Converting all POST data to php variables and saving SESSION varaibles too
+		$subject = $_POST['Subject'];
+		$_SESSION['subject'] = $subject;		
+		$prob_desc = $_POST['Description'];
+		$_SESSION['description'] = $prob_desc;
+		$category = $_POST['Category2'];
+		if ($category === NULL || $category == 'Other' || $category == 'Select a Category')
+			$category = $_POST['Category'];
+		$_SESSION['category'] =	$category;
+		$month_due = $_POST['Month'];$fname = $_POST['Fname'];
+		$_SESSION['fname'] = $fname;
+		$_SESSION['month_due'] = $month_due;
+		$day_due = $_POST['Day'];
+		$_SESSION['day_due'] = $day_due;
+		$year_due = $_POST['Year'];
+		$_SESSION['year_due'] =	$year_due;
+		$system_type = $_POST['System_type2'];
+		if ($system_type === NULL || $system_type == 'Other' || $system_type == 'Select a System Type')
+			$system_type = $_POST['System_type'];
+		$_SESSION['system_type'] = $system_type;
+		$room_building = $_POST['Building'];
+		$_SESSION['room_building'] = $room_building;
+		$room_number = $_POST['Room_number'];
+		$_SESSION['room_number'] = $room_number;
+		$comp_name = $_POST['Computer_name'];
+		$_SESSION['comp_name'] = $comp_name;
+		$prob_type = $_POST['Problem_type'];
+		$_SESSION['prob_type'] = $prob_type;
+		$pos_room = $_POST['Position_room'];
+		$_SESSION['pos_room'] =	$pos_room;
+		$hours = $_POST['Hours'];
+		$_SESSION['hours'] = $hours;
+		// Set default for priority
+		if ($_POST['Priority'] == NULL)
+			$priority = 'low';
+		else
+			$priority = $_POST['Priority'];
+		$_SESSION['priority'] =	$priority;
+		// Set default for escalaton	
+		if ($_POST['Escalation'] == NULL)
+			$escalation = 'Labbie';
+		else
+			$escalation = $_POST['Escalation'];
+		$_SESSION['escalation'] = $escalation;
+		
+		$email_adr = $_POST['Email'];
+		$_SESSION['email_adr'] = $email_adr;
+
+		$fname = $_POST['Fname'];
+		$_SESSION['fname'] = $fname;
+
+		$lname = $_POST['Lname'];
+		$_SESSION['lname'] = $lname;
+		
+
+		// Creating a submission date that can be saved to mysql	
+		date_default_timezone_set('America/Los_Angeles');	
+		$phpdate = strtotime( "now" );
+		$date_submitted = date( 'Y-m-d H:i:s', $phpdate );		
+		$_SESSION['date_submitted'] = $mysqldate;
+		
+		// Redirect to new_problem if required fields are not filled in
+		if (!$_POST['Subject'] || !$_POST['Description'] ||  !$_POST['Building'] || !$_POST['Room_number'])
+		{	
+			header("Location: new_problem.php?msg=You did not complete all of the required fields");
+			return;
+		}	
+
+		// Telling mysql what data needs to go in each field of p_report table
+		// This is done for a brand new report, not to update
+		$sql="INSERT INTO p_report (subject, prob_desc, category, year_due, month_due, day_due, system_type, room_building, room_number, computer_name, problem_type, position_room, priority, date_entered, escalation, hours)
+		VALUES
+		('".$subject."','".$prob_desc."','".$category."','".$year_due."','".$month_due."','".$day_due."',
+		'".$system_type."','".$room_building."','".$room_number."','".$comp_name."','".$prob_type."',
+		'".$pos_room."','".$priority."','".$date_submitted."','".$escalation."','".$hours."')";
+		
+		if (!mysql_query($sql,$con))
+		  {
+		  die('Error: ' . mysql_error());
+		  }
+		echo "1 record added";
+		
+		// Session id only saved after it is created in mysql. 
+		$_SESSION['id'] = mysql_insert_id();
+		
+		
+		
+		//**********************************************************
+		//Email Response System
+		//----------------------------------------------------------
+		
+		//define the receiver of the email
+		$to = $email_adr;
+		//define the subject of the email
+		$email_subject = "Error Ticket: $subject";
+		//define the message to be sent. Each line should be separated with \n
+		$message = "Hello $lname, $fname!\n\nThe following error ticket '$subject' has been submitted on $date_submitted\n\nThank You!";
+		//define the headers we want passed. Note that they are separated with \r\n
+		$headers = "From: ngniech@gmail.com\r\nReply-To: ngniech@gmail.com";
+		//send the email
+		$mail_sent = @mail( $to, $email_subject, $message, $headers );
+		//if the message is sent successfully print "Mail sent". Otherwise print "Mail failed" 
+		echo $mail_sent ? "Mail sent" : "Mail failed";
+		
+		//**********************************************************
+		
+				
+		// redirect to auto response page after successfully adding new report
+		header("Location:auto_response.php");
+				
+	
+	?>
+</body>
+
+</html>
